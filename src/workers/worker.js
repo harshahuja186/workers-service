@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { Worker, UnrecoverableError } = require("bullmq");
 const { TODO_QUEUE, workerOptions } = require("../config/bullmq");
 
@@ -70,7 +71,9 @@ async function runWorker() {
   });
 
   const shutdown = async (signal) => {
-    console.log(`[${WORKER_ID}] ${signal} received, finishing in-flight jobs...`);
+    console.log(
+      `[${WORKER_ID}] ${signal} received, finishing in-flight jobs...`,
+    );
     try {
       await worker.close();
     } catch (error) {
