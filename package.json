@@ -1,5 +1,15 @@
 {
+  "name": "worker-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BullMQ workers for todo-backend jobs",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/workers/worker.js",
+    "dev": "node --watch src/workers/worker.js"
+  },
   "dependencies": {
+    "bullmq": "^6.1.2",
     "ioredis": "^6.0.0"
   }
 }

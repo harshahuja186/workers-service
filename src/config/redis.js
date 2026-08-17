@@ -1,4 +1,3 @@
-const Redis = require("ioredis");
 const path = require("path");
 const fs = require("fs");
 
@@ -27,53 +26,30 @@ function loadEnv() {
 
 loadEnv();
 
-let redisClient = null;
+/**
+ * Connection options for BullMQ (ioredis).
+ * maxRetriesPerRequest: null is required for Workers — they use blocking Redis commands.
+ * Pass this object (not a shared ioredis instance) so BullMQ can open its own connections.
+ */
+const getRedisConnection = () => {
+  const host = process.env.REDIS_HOST;
+  const port = Number(process.env.REDIS_PORT);
+  const username = process.env.REDIS_USERNAME || "default";
+  const password = process.env.REDIS_PASSWORD;
 
-const connectRedis = async () => {
-  if (redisClient) return redisClient;
-
-  try {
-    const host = process.env.REDIS_HOST;
-    const port = Number(process.env.REDIS_PORT);
-    const username = process.env.REDIS_USERNAME || "default";
-    const password = process.env.REDIS_PASSWORD;
-
-    if (!host || !port || !password) {
-      throw new Error(
-        "Missing Redis config. Set REDIS_HOST, REDIS_PORT, REDIS_PASSWORD in .env",
-      );
-    }
-
-    console.log("🔌 Connecting to Redis (ioredis)...");
-
-    redisClient = new Redis({
-      host,
-      port,
-      username,
-      password,
-      maxRetriesPerRequest: null, // required for long-running workers / blocking reads
-      enableReadyCheck: true,
-      lazyConnect: true,
-    });
-
-    redisClient.on("error", (err) => console.error("❌ Redis Error:", err.message));
-    redisClient.on("ready", () => console.log("✅ Redis Connected!"));
-    redisClient.on("reconnecting", () => console.log("♻️  Redis reconnecting..."));
-
-    await redisClient.connect();
-    return redisClient;
-  } catch (error) {
-    console.error(`❌ Redis Connection Failed: ${error.message}`);
-    redisClient = null;
-    throw error;
+  if (!host || !port || !password) {
+    throw new Error(
+      "Missing Redis config. Set REDIS_HOST, REDIS_PORT, REDIS_PASSWORD in .env",
+    );
   }
+
+  return {
+    host,
+    port,
+    username,
+    password,
+    maxRetriesPerRequest: null,
+  };
 };
 
-const getRedisClient = () => {
-  if (!redisClient) {
-    throw new Error("Redis client not initialized. Call connectRedis() first.");
-  }
-  return redisClient;
-};
-
-module.exports = { connectRedis, getRedisClient };
+module.exports = { getRedisConnection };
