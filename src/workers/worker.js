@@ -38,7 +38,19 @@ async function processJob(job) {
 }
 
 async function runWorker() {
-  const worker = new Worker(TODO_QUEUE, processJob, workerOptions);
+  const queues = [
+    { name: "todo", concurrency: 5 },
+    // { name: "billing", concurrency: 2 },
+    // { name: "notifications", concurrency: 10 },
+  ];
+
+  const workers = queues.map(
+    (queue) =>
+      new Worker(queue.name, processJob, {
+        ...workerOptions,
+        concurrency: queue.concurrency,
+      }),
+  );
 
   worker.on("ready", () => {
     console.log(
@@ -75,7 +87,7 @@ async function runWorker() {
       `[${WORKER_ID}] ${signal} received, finishing in-flight jobs...`,
     );
     try {
-      await worker.close();
+      await Promise.all(workers.map((w) => w.close()));
     } catch (error) {
       console.error(`[${WORKER_ID}] Error closing worker: ${error.message}`);
     }
